@@ -46,6 +46,7 @@ class SqliAppTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn(b"SNXLabs", response.data)
             self.assertIn(b"Web Security Labs", response.data)
+            return response.data
         finally:
             response.close()
 
@@ -188,6 +189,125 @@ class SqliAppTests(unittest.TestCase):
         self.assertIn(b"disposable data only", response.data)
         self.assertIn(b"Show Hint", response.data)
         self.assertIn(b"Reset Practice Data", response.data)
+
+    def test_sqli_hub_lists_only_the_planned_sql_injection_challenges(self):
+        response = self.client.get("/labs/sqli")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Authentication Bypass", response.data)
+        self.assertIn(b"Basic / ID Parameter SQLi", response.data)
+        self.assertIn(b' href="/labs/sqli/authentication-bypass"', response.data)
+        self.assertIn(b' href="/labs/sqli/id-parameter"', response.data)
+        for coming_soon in (
+            b"Error-Based SQLi",
+            b"ORDER BY SQLi",
+            b"UNION-Based SQLi",
+            b"Boolean-Based Blind SQLi",
+            b"Time-Based Blind SQLi",
+        ):
+            self.assertIn(coming_soon, response.data)
+        self.assertIn(b"Coming Soon", response.data)
+
+    def test_homepage_sql_injection_card_opens_the_sqli_hub(self):
+        homepage = self.assert_homepage_served()
+        self.assertIn(b'href="/labs/sqli"', homepage)
+
+        hub = self.client.get("/labs/sqli")
+        self.assertEqual(hub.status_code, 200)
+        self.assertIn(b"SQL Injection Lab", hub.data)
+
+    def test_product_route_returns_one_fictional_product_for_a_normal_id(self):
+        response = self.client.get("/product?id=1")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["products"][0]["id"], 1)
+        self.assertEqual(payload["products"][0]["name"], "Aurora Wireless Keyboard")
+        self.assertIn("WHERE id = 1", payload["query"])
+
+    def test_product_route_returns_not_found_for_an_unknown_id(self):
+        response = self.client.get("/product?id=9999")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json()["products"], [])
+
+    def test_id_parameter_challenge_uses_sql_results_to_detect_success(self):
+        response = self.client.post(
+            "/labs/sqli/id-parameter",
+            data={"target_request": "/product?id=1 OR 1=1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Challenge completed", response.data)
+        self.assertIn(b"Aurora Wireless Keyboard", response.data)
+        self.assertIn(b"Northstar Desk Lamp", response.data)
+        self.assertIn(b"Trailhead Daypack", response.data)
+        self.assertIn(b"Harbor Ceramic Mug", response.data)
+        self.assertIn(b"WHERE id = 1 OR 1=1", response.data)
+
+    def test_id_parameter_unsuccessful_request_does_not_complete_challenge(self):
+        response = self.client.post(
+            "/labs/sqli/id-parameter",
+            data={"target_request": "/product?id=9999"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"No product matched this request", response.data)
+        self.assertNotIn(b"Challenge completed", response.data)
+
+    def test_id_parameter_simulator_blocks_external_urls(self):
+        response = self.client.post(
+            "/labs/sqli/id-parameter",
+            data={"target_request": "https://example.invalid/product?id=1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"External URLs are never requested", response.data)
+        self.assertIn(b"BLOCKED", response.data)
+        self.assertNotIn(b"Aurora Wireless Keyboard", response.data)
+
+    def test_id_parameter_reset_restores_only_the_fictional_product_catalog(self):
+        with sqlite3.connect(sqli_app.DATABASE) as connection:
+            connection.execute(
+                """
+                INSERT INTO products
+                (id, name, category, description, price, stock)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (99, "Temporary Item", "Practice", "Temporary row", 1.00, 1),
+            )
+            connection.commit()
+
+        response = self.client.post("/labs/sqli/id-parameter/reset")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.headers["Location"],
+            "/labs/sqli/id-parameter?reset=1",
+        )
+        reset_page = self.client.get(response.headers["Location"])
+        self.assertEqual(reset_page.status_code, 200)
+        self.assertIn(b"Product practice data was restored", reset_page.data)
+
+        with sqlite3.connect(sqli_app.DATABASE) as connection:
+            product_rows = connection.execute(
+                "SELECT id, name FROM products ORDER BY id"
+            ).fetchall()
+            user_rows = connection.execute(
+                "SELECT username FROM users ORDER BY id"
+            ).fetchall()
+
+        self.assertEqual(
+            product_rows,
+            [
+                (1, "Aurora Wireless Keyboard"),
+                (2, "Northstar Desk Lamp"),
+                (3, "Trailhead Daypack"),
+                (4, "Harbor Ceramic Mug"),
+            ],
+        )
+        self.assertEqual(user_rows, [("admin",), ("alice",), ("bob",)])
 
     def test_lab_return_home_link_points_to_working_homepage(self):
         lab_page = self.client.get("/labs/sqli")

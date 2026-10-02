@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, send_from_directory
+from flask import Flask, jsonify, render_template, request, redirect, send_from_directory
 import sqlite3
 import os
+from urllib.parse import parse_qs, urlsplit
 
 
 # =========================
@@ -17,6 +18,40 @@ DATABASE = os.path.join(
 )
 
 ADMIN_PASSWORD = "SNXadmin123"
+PRODUCT_SEED_DATA = (
+    (
+        1,
+        "Aurora Wireless Keyboard",
+        "Workspace",
+        "A compact wireless keyboard with quiet, low-profile keys.",
+        89.99,
+        18,
+    ),
+    (
+        2,
+        "Northstar Desk Lamp",
+        "Lighting",
+        "A dimmable LED lamp with an adjustable arm and warm light.",
+        54.00,
+        24,
+    ),
+    (
+        3,
+        "Trailhead Daypack",
+        "Outdoor",
+        "A weather-resistant 18-liter pack for daily carry.",
+        72.50,
+        11,
+    ),
+    (
+        4,
+        "Harbor Ceramic Mug",
+        "Kitchen",
+        "A matte-glazed stoneware mug with a 350 ml capacity.",
+        18.00,
+        36,
+    ),
+)
 
 
 # =========================
@@ -40,6 +75,32 @@ def get_db():
     connection = sqlite3.connect(DATABASE)
     connection.row_factory = sqlite3.Row
     return connection
+
+
+def create_products_table(connection):
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT NOT NULL,
+            price REAL NOT NULL,
+            stock INTEGER NOT NULL
+        )
+        """
+    )
+
+
+def seed_products(connection):
+    connection.executemany(
+        """
+        INSERT INTO products
+        (id, name, category, description, price, stock)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        PRODUCT_SEED_DATA,
+    )
 
 
 def init_db():
@@ -87,6 +148,14 @@ def init_db():
                 )
             ]
         )
+
+    create_products_table(connection)
+    existing_products = connection.execute(
+        "SELECT COUNT(*) FROM products"
+    ).fetchone()[0]
+
+    if existing_products == 0:
+        seed_products(connection)
 
     connection.commit()
     connection.close()
@@ -140,6 +209,34 @@ def reset_db():
     connection.close()
 
 
+def reset_products_db():
+    connection = get_db()
+    connection.execute("DROP TABLE IF EXISTS products")
+    create_products_table(connection)
+    seed_products(connection)
+    connection.commit()
+    connection.close()
+
+
+def execute_product_lookup(id_expression):
+    query = (
+        "SELECT id, name, category, description, price, stock "
+        f"FROM products WHERE id = {id_expression}"
+    )
+    connection = get_db()
+
+    try:
+        products = [
+            dict(row)
+            for row in connection.execute(query).fetchall()
+        ]
+        return query, products, None
+    except sqlite3.Error as exc:
+        return query, [], str(exc)
+    finally:
+        connection.close()
+
+
 # =========================
 # HOME
 # =========================
@@ -189,11 +286,18 @@ def javascript(filename):
 # SQLI LAB
 # =========================
 
+@app.route("/labs/sqli", methods=["GET", "POST"])
 @app.route(
-    "/labs/sqli",
+    "/labs/sqli/authentication-bypass",
     methods=["GET", "POST"]
 )
 def sqli_lab():
+
+    if request.path == "/labs/sqli" and request.method == "GET":
+        return render_template(
+            "sqli/hub.html",
+            reset_done=request.args.get("reset") == "1",
+        )
 
     results = []
     error = None
@@ -290,6 +394,101 @@ def sqli_lab():
     )
 
 
+@app.route("/labs/sqli/id-parameter", methods=["GET", "POST"])
+def id_parameter_lab():
+    target_request = "/product?id=1"
+    request_sent = request.method == "POST"
+    browser_error = None
+    sql_error = None
+    sql_query = None
+    products = []
+    response_status = 200
+
+    if request_sent:
+        target_request = request.form.get("target_request", target_request)
+
+    try:
+        parsed_request = urlsplit(target_request)
+        if (
+            parsed_request.scheme
+            or parsed_request.netloc
+            or parsed_request.path != "/product"
+            or parsed_request.fragment
+        ):
+            browser_error = (
+                "This simulated browser only accepts the local "
+                "/product endpoint. External URLs are never requested."
+            )
+            response_status = 400
+        else:
+            parameters = parse_qs(
+                parsed_request.query,
+                keep_blank_values=True,
+            )
+            id_values = parameters.get("id", [])
+
+            if len(id_values) != 1 or not id_values[0]:
+                browser_error = "Add exactly one non-empty id parameter to the request."
+                response_status = 400
+            else:
+                sql_query, products, sql_error = execute_product_lookup(
+                    id_values[0]
+                )
+                if sql_error:
+                    response_status = 500
+                elif not products:
+                    response_status = 404
+    except ValueError:
+        browser_error = (
+            "Enter a valid relative request for the local /product endpoint."
+        )
+        response_status = 400
+
+    challenge_completed = (
+        request_sent
+        and browser_error is None
+        and sql_error is None
+        and len(products) > 1
+    )
+
+    return render_template(
+        "sqli/id_parameter.html",
+        target_request=target_request,
+        request_sent=request_sent,
+        browser_error=browser_error,
+        sql_error=sql_error,
+        sql_query=sql_query,
+        products=products,
+        response_status=response_status,
+        challenge_completed=challenge_completed,
+        reset_done=request.args.get("reset") == "1",
+    )
+
+
+@app.route("/product", methods=["GET"])
+def product_target():
+    id_expression = request.args.get("id", "1")
+    query, products, error = execute_product_lookup(id_expression)
+
+    if error:
+        return jsonify(
+            {
+                "error": error,
+                "products": [],
+                "query": query,
+            }
+        ), 400
+
+    response_status = 200 if products else 404
+    return jsonify(
+        {
+            "count": len(products),
+            "products": products,
+            "query": query,
+        }
+    ), response_status
+
+
 # =========================
 # RESET SQLI LAB
 # =========================
@@ -298,13 +497,24 @@ def sqli_lab():
     "/labs/sqli/reset",
     methods=["POST"]
 )
+@app.route(
+    "/labs/sqli/authentication-bypass/reset",
+    methods=["POST"]
+)
 def reset_sqli():
 
     reset_db()
 
-    return redirect(
-        "/labs/sqli?reset=1"
-    )
+    if request.path == "/labs/sqli/reset":
+        return redirect("/labs/sqli?reset=1")
+
+    return redirect("/labs/sqli/authentication-bypass?reset=1")
+
+
+@app.route("/labs/sqli/id-parameter/reset", methods=["POST"])
+def reset_id_parameter():
+    reset_products_db()
+    return redirect("/labs/sqli/id-parameter?reset=1")
 
 
 # =========================

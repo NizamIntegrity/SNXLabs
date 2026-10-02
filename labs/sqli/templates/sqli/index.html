@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>SQL Injection Lab | SNXLabs</title>
+    <link rel="icon" href="data:,">
 
     <style>
         * {
@@ -34,14 +35,14 @@
             font-weight: bold;
         }
 
-        .home-link {
+        .hub-link {
             color: #aaa;
             font-size: 14px;
             text-decoration: none;
         }
 
-        .home-link:hover,
-        .home-link:focus-visible {
+        .hub-link:hover,
+        .hub-link:focus-visible {
             color: #00ff88;
         }
 
@@ -413,7 +414,7 @@
                 padding: 0 14px;
             }
 
-            .home-link {
+            .hub-link {
                 font-size: 13px;
             }
 
@@ -447,7 +448,7 @@
 
     <nav class="navbar">
         <div class="logo">SNXLabs</div>
-        <a class="home-link" href="/" aria-label="Return to SNXLabs homepage">← SNXLabs Home</a>
+        <a class="hub-link" href="/labs/sqli">← SQL Injection Labs</a>
     </nav>
 
     <main class="container">
@@ -569,7 +570,7 @@
                 </div>
                 {% endif %}
 
-                <form method="POST">
+                <form method="POST" action="/labs/sqli/authentication-bypass">
 
                     <label for="username">
                         Username
@@ -615,7 +616,7 @@
                     </p>
                     <form
                         method="POST"
-                        action="/labs/sqli/reset"
+                        action="/labs/sqli/authentication-bypass/reset"
                         onsubmit="return confirm('Reset the shared practice database to its original sample accounts? Changes made during practice will be removed.');"
                     >
                         <button

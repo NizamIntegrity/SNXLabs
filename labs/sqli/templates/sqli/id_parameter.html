@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic ID Parameter SQLi | SNXLabs</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            color: #e8e8e8;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 0 25px;
+            border-bottom: 1px solid #222;
+            background: #0d0d0d;
+        }
+
+        .logo { color: #00ff88; font-size: 20px; font-weight: bold; }
+        .nav-link { color: #aaa; font-size: 14px; text-decoration: none; }
+        .nav-link:hover { color: #00ff88; }
+        a:focus-visible, button:focus-visible, input:focus-visible {
+            outline: 2px solid #00ff88;
+            outline-offset: 3px;
+        }
+
+        .container { width: min(94%, 1050px); margin: 30px auto 48px; }
+        .header { margin-bottom: 20px; }
+        .eyebrow {
+            margin: 0 0 8px;
+            color: #00ff88;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+        h1 { margin: 0 0 8px; color: #fff; font-size: clamp(29px, 5vw, 40px); }
+        .subtitle { margin: 0; color: #999; line-height: 1.55; }
+
+        .notice, .reset-notice {
+            margin: 16px 0;
+            padding: 12px 14px;
+            border: 1px solid #4d4000;
+            border-radius: 8px;
+            background: #171400;
+            color: #e7d990;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        .notice strong { color: #ffe36e; }
+        .reset-notice {
+            border-color: #164d35;
+            background: #0b1711;
+            color: #9de6bd;
+        }
+
+        .learning-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+            margin: 18px 0;
+        }
+        .panel {
+            min-width: 0;
+            padding: 18px;
+            border: 1px solid #242424;
+            border-radius: 9px;
+            background: #111;
+        }
+        .panel h2 { margin: 0 0 12px; color: #fff; font-size: 18px; }
+        .panel p, .panel li { color: #aaa; line-height: 1.6; }
+        .panel p:last-child { margin-bottom: 0; }
+        .panel ul { margin: 8px 0 0; padding-left: 20px; }
+
+        .hint-button, .send-button, .reset-button {
+            min-height: 44px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 9px 13px;
+            background: #161616;
+            color: #00ff88;
+            font: inherit;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .hint-button:hover { background: #1d1d1d; }
+        .hint-list {
+            margin: 12px 0 0;
+            padding-left: 22px;
+            color: #b4c8ba;
+            line-height: 1.6;
+        }
+        .hint-list li { margin-bottom: 8px; }
+        .hint-list li[hidden] { display: none; }
+
+        .browser-panel { padding: 0; overflow: hidden; }
+        .browser-top {
+            padding: 12px 16px;
+            border-bottom: 1px solid #292929;
+            background: #171717;
+            color: #999;
+            font-size: 12px;
+        }
+        .browser-top strong { color: #00ff88; }
+        .browser-content { padding: 18px; }
+        .browser-content h2 { margin: 0 0 7px; color: #fff; font-size: 19px; }
+        .browser-content > p { margin: 0 0 16px; color: #999; font-size: 14px; line-height: 1.5; }
+        .request-form label {
+            display: block;
+            margin-bottom: 7px;
+            color: #bbb;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .request-controls {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+        }
+        .request-controls input {
+            width: 100%;
+            min-width: 0;
+            min-height: 46px;
+            padding: 10px 12px;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            background: #080808;
+            color: #e8e8e8;
+            font: inherit;
+        }
+        .send-button {
+            border-color: #00ff88;
+            background: #00ff88;
+            color: #000;
+        }
+        .send-button:hover { background: #00dd77; }
+        .request-note { margin: 8px 0 18px; color: #777; font-size: 12px; line-height: 1.5; }
+
+        .request-response {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: start;
+            margin: 16px 0;
+            padding: 12px;
+            border: 1px solid #292929;
+            border-radius: 7px;
+            background: #0b0b0b;
+        }
+        .request-response span { display: block; margin-bottom: 5px; color: #777; font-size: 11px; text-transform: uppercase; }
+        .request-response code {
+            display: block;
+            color: #a9e8c3;
+            font: 13px/1.5 monospace;
+            overflow-wrap: anywhere;
+        }
+        .response-status {
+            padding: 5px 8px;
+            border: 1px solid #164d35;
+            border-radius: 5px;
+            color: #00ff88;
+            font: bold 12px monospace;
+            white-space: nowrap;
+        }
+        .response-status.not-found, .response-status.error {
+            border-color: #6b2020;
+            color: #ff8888;
+        }
+
+        .target-app {
+            padding: 15px;
+            border: 1px solid #222;
+            border-radius: 8px;
+            background: #0e0e0e;
+        }
+        .target-brand {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #ddd;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .target-brand span:last-child { color: #777; font-size: 11px; font-weight: normal; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .product-card {
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid #292929;
+            border-radius: 7px;
+            background: #141414;
+        }
+        .product-category { margin: 0 0 6px; color: #00ff88; font-size: 10px; text-transform: uppercase; letter-spacing: .7px; }
+        .product-card h3 { margin: 0 0 6px; color: #eee; font-size: 14px; overflow-wrap: anywhere; }
+        .product-description { margin: 0 0 10px; color: #999; font-size: 12px; line-height: 1.5; }
+        .product-meta { display: flex; justify-content: space-between; gap: 8px; color: #ccc; font-size: 12px; }
+        .product-meta strong { color: #00ff88; }
+        .empty-state, .browser-error, .sql-error {
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .browser-error, .sql-error {
+            border-color: #6b2020;
+            background: #250909;
+            color: #ffaaaa;
+        }
+
+        .success {
+            margin: 16px 0;
+            padding: 16px;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            background: #07160e;
+            color: #c1d8ca;
+            line-height: 1.6;
+        }
+        .success h2 { margin: 0 0 8px; color: #00ff88; font-size: 19px; }
+        .success p { margin: 8px 0 0; }
+
+        .remediation { margin-top: 18px; }
+        .remediation h2 { color: #00ff88; }
+        .remediation h3 { margin: 18px 0 6px; color: #eee; font-size: 15px; }
+        .remediation p { margin: 0; color: #aaa; font-size: 14px; line-height: 1.6; }
+        pre {
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 13px;
+            border: 1px solid #292929;
+            border-left: 3px solid #00ff88;
+            border-radius: 7px;
+            background: #070707;
+            color: #cce6d5;
+            font: 12px/1.55 monospace;
+        }
+        .reset-box { margin-top: 16px; padding-top: 14px; border-top: 1px solid #292929; }
+        .reset-box p { margin: 0 0 9px; color: #888; font-size: 12px; line-height: 1.5; }
+        .reset-button { color: #ff8888; }
+        .reset-button:hover { background: #211515; }
+        .footer { margin-top: 28px; color: #666; text-align: center; font-size: 12px; }
+
+        @media (max-width: 700px) {
+            .container { width: calc(100% - 28px); margin: 22px auto 36px; }
+            .learning-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .navbar { min-height: 56px; padding: 0 14px; }
+            .logo { font-size: 18px; }
+            .nav-link { font-size: 12px; }
+            .container { width: calc(100% - 24px); }
+            .panel { padding: 15px; }
+            .browser-content { padding: 14px; }
+            .request-controls { grid-template-columns: minmax(0, 1fr); }
+            .send-button, .reset-button { width: 100%; }
+            .request-response { grid-template-columns: minmax(0, 1fr); }
+            .response-status { justify-self: start; }
+            .product-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">SNXLabs</div>
+        <a class="nav-link" href="/labs/sqli">← SQL Injection Labs</a>
+    </nav>
+
+    <main class="container">
+        <header class="header">
+            <p class="eyebrow">SQL Injection / Basic</p>
+            <h1>ID Parameter SQLi</h1>
+            <p class="subtitle">A local product lookup that intentionally places the simulated ID value into an SQL query.</p>
+        </header>
+
+        <div class="notice" role="note">
+            <strong>Local target only — fictional products and disposable data.</strong>
+            The request field accepts only this simulation’s relative <code>/product</code>
+            path. It never opens or sends a request to an external site.
+        </div>
+
+        {% if reset_done %}
+        <div class="reset-notice" role="status" aria-live="polite">
+            Product practice data was restored to the original fictional catalog.
+        </div>
+        {% endif %}
+
+        <div class="learning-grid">
+            <section class="panel">
+                <h2>🎯 Objective</h2>
+                <p>
+                    The product endpoint is designed to look up one product by ID.
+                    Change the simulated request so its response includes more than
+                    one product from the local practice database.
+                </p>
+                <p>
+                    The browser below sends a form to SNXLabs. Its URL is interpreted
+                    locally; the app does not navigate your browser to that URL.
+                </p>
+            </section>
+
+            <section class="panel">
+                <h2>💡 Progressive hints</h2>
+                <p>Reveal a hint only when you want one. The final request is not shown automatically.</p>
+                <button class="hint-button" id="hint-button" type="button" aria-expanded="false">
+                    Show Hint 1
+                </button>
+                <ol class="hint-list" id="hint-list">
+                    <li hidden>The target query places the ID value after <code>WHERE id =</code>.</li>
+                    <li hidden>Think about how SQL evaluates a condition that contains more than one part.</li>
+                    <li hidden>The goal is a condition that matches multiple rows in the fictional products table.</li>
+                </ol>
+            </section>
+        </div>
+
+        <section class="panel browser-panel" aria-labelledby="browser-heading">
+            <div class="browser-top"><strong>●</strong> SNXLabs local target simulator</div>
+            <div class="browser-content">
+                <h2 id="browser-heading">Product Lookup</h2>
+                <p>Send a request to the fictional SNX Supply catalog running inside this app.</p>
+
+                <form class="request-form" method="POST" action="/labs/sqli/id-parameter">
+                    <label for="target-request">Simulated request URL</label>
+                    <div class="request-controls">
+                        <input
+                            id="target-request"
+                            name="target_request"
+                            type="text"
+                            value="{{ target_request }}"
+                            placeholder="/product?id=1"
+                            autocomplete="off"
+                            spellcheck="false"
+                            required
+                        >
+                        <button class="send-button" type="submit">Send Request</button>
+                    </div>
+                    <p class="request-note">Only relative requests to <code>/product</code> are accepted. No external connection is made.</p>
+                </form>
+
+                <div class="request-response">
+                    <div>
+                        <span>{% if request_sent %}Request sent{% else %}Example request{% endif %}</span>
+                        <code>{{ target_request }}</code>
+                    </div>
+                    <div class="response-status{% if response_status == 404 %} not-found{% elif response_status >= 400 %} error{% endif %}">
+                        {% if browser_error %}BLOCKED{% else %}HTTP {{ response_status }}{% endif %}
+                    </div>
+                </div>
+
+                {% if challenge_completed %}
+                <section class="success" role="status" aria-live="polite">
+                    <h2>✓ Challenge completed</h2>
+                    <p>
+                        The local database returned multiple fictional products from
+                        one ID-parameter request. The success state comes from the
+                        actual product rows returned by SQLite.
+                    </p>
+                    <p>
+                        <strong>Why it worked:</strong> the target concatenates the
+                        ID expression into SQL, so the database evaluates learner
+                        input as part of the query instead of as a bound value.
+                    </p>
+                    <p>
+                        <strong>Impact:</strong> similar flaws can expose records
+                        beyond the requested item, limited by the data and permissions
+                        available to the database account.
+                    </p>
+                </section>
+                {% elif request_sent and not browser_error and not sql_error and products|length == 1 %}
+                <div class="empty-state" role="status">
+                    One product was returned. The challenge asks for multiple products from one request.
+                </div>
+                {% endif %}
+
+                {% if browser_error %}
+                <div class="browser-error" role="alert">{{ browser_error }}</div>
+                {% elif sql_error %}
+                <div class="sql-error" role="alert">
+                    The local practice query returned a database error: {{ sql_error }}
+                </div>
+                {% elif not products %}
+                <div class="empty-state" role="status">No product matched this request.</div>
+                {% else %}
+                <section class="target-app" aria-label="Simulated target application response">
+                    <div class="target-brand">
+                        <span>SNX SUPPLY</span>
+                        <span>Fictional practice catalog · {{ products|length }} result{% if products|length != 1 %}s{% endif %}</span>
+                    </div>
+                    <div class="product-grid">
+                        {% for product in products %}
+                        <article class="product-card">
+                            <p class="product-category">{{ product["category"] }}</p>
+                            <h3>{{ product["name"] }}</h3>
+                            <p class="product-description">{{ product["description"] }}</p>
+                            <div class="product-meta">
+                                <strong>${{ "%.2f"|format(product["price"]) }}</strong>
+                                <span>{{ product["stock"] }} in stock</span>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if sql_query %}
+                <details class="query-details">
+                    <summary>View the local target’s SQL query</summary>
+                    <pre>{{ sql_query }}</pre>
+                </details>
+                {% endif %}
+
+                <div class="reset-box">
+                    <p>Reset restores the original four fictional products in the shared local practice database.</p>
+                    <form method="POST" action="/labs/sqli/id-parameter/reset"
+                          onsubmit="return confirm('Restore the original fictional product catalog? Changes to product practice data will be removed.');">
+                        <button class="reset-button" type="submit">Reset Product Practice Data</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel remediation">
+            <h2>🛡️ Remediation</h2>
+            <h3>Bind the ID as a parameter</h3>
+            <p>Use a prepared, parameterized statement so the ID remains a value and cannot change SQL syntax.</p>
+            <pre>query = "SELECT id, name, price FROM products WHERE id = ?"
+products = connection.execute(query, (product_id,)).fetchall()</pre>
+            <h3>Validate expected input too</h3>
+            <p>Check that an ID has the expected format and range for clear application behavior. Validation helps, but does not replace parameter binding.</p>
+            <h3>Use limited database access</h3>
+            <p>Keep the database account and file permissions limited to what the application needs. Return a generic error to users and keep detailed SQL errors in protected server logs.</p>
+        </section>
+        <footer class="footer">SNXLabs — local security education with disposable practice data.</footer>
+    </main>
+
+    <script>
+        const hintButton = document.getElementById("hint-button");
+        const hintItems = Array.from(document.querySelectorAll("#hint-list li"));
+        let nextHint = 0;
+
+        hintButton.addEventListener("click", () => {
+            if (nextHint >= hintItems.length) return;
+            hintItems[nextHint].hidden = false;
+            nextHint += 1;
+            hintButton.setAttribute("aria-expanded", "true");
+            if (nextHint >= hintItems.length) {
+                hintButton.textContent = "All hints shown";
+                hintButton.disabled = true;
+            } else {
+                hintButton.textContent = `Show Hint ${nextHint + 1}`;
+            }
+        });
+    </script>
+</body>
+</html>
