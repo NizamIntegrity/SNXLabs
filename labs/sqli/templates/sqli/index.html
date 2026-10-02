@@ -22,6 +22,7 @@
             height: 60px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 0 25px;
             border-bottom: 1px solid #222;
             background: #0d0d0d;
@@ -31,6 +32,17 @@
             color: #00ff88;
             font-size: 20px;
             font-weight: bold;
+        }
+
+        .home-link {
+            color: #aaa;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .home-link:hover,
+        .home-link:focus-visible {
+            color: #00ff88;
         }
 
         .container {
@@ -53,13 +65,39 @@
             margin: 0;
         }
 
+        .lab-notice {
+            margin-bottom: 20px;
+            padding: 13px 15px;
+            border: 1px solid #4d4000;
+            border-radius: 8px;
+            background: #171400;
+            color: #d5c77c;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .lab-notice strong {
+            color: #ffe36e;
+        }
+
+        .reset-notice {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            border: 1px solid #164d35;
+            border-radius: 8px;
+            background: #0b1711;
+            color: #9de6bd;
+            line-height: 1.5;
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
             gap: 20px;
         }
 
         .card {
+            min-width: 0;
             background: #111;
             border: 1px solid #242424;
             border-radius: 10px;
@@ -148,6 +186,13 @@
             border-color: #00ff88;
         }
 
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible {
+            outline: 2px solid #00ff88;
+            outline-offset: 3px;
+        }
+
         .login-button {
             width: 100%;
             padding: 12px;
@@ -196,6 +241,64 @@
             margin-top: 0;
         }
 
+        .success-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .success-point {
+            padding: 12px;
+            border: 1px solid #164d35;
+            border-radius: 7px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #c1d8ca;
+            line-height: 1.55;
+        }
+
+        .success-point h4 {
+            margin: 0 0 6px;
+            color: #00ff88;
+        }
+
+        .success-point p {
+            margin: 0;
+        }
+
+        .feedback {
+            margin: 0 0 16px;
+            padding: 12px 14px;
+            border: 1px solid #333;
+            border-radius: 7px;
+            line-height: 1.5;
+        }
+
+        .feedback.failed {
+            border-color: #6b2020;
+            background: #250909;
+            color: #ffaaaa;
+        }
+
+        .feedback.incomplete {
+            border-color: #4d4000;
+            background: #171400;
+            color: #e7d990;
+        }
+
+        .feedback.query-error {
+            border-color: #6b2020;
+            background: #250909;
+            color: #ffaaaa;
+        }
+
+        .reset-explanation {
+            margin: 0 0 10px;
+            color: #888;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         .results {
             margin-top: 20px;
         }
@@ -237,6 +340,12 @@
         .remediation p {
             color: #aaa;
             line-height: 1.6;
+        }
+
+        .remediation h3 {
+            margin: 22px 0 8px;
+            color: #eee;
+            font-size: 16px;
         }
 
         .code-title {
@@ -285,12 +394,50 @@
 
         @media (max-width: 750px) {
             .grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .success-grid {
                 grid-template-columns: 1fr;
             }
 
             .container {
                 width: 94%;
                 margin-top: 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                height: 56px;
+                padding: 0 14px;
+            }
+
+            .home-link {
+                font-size: 13px;
+            }
+
+            .container {
+                width: calc(100% - 24px);
+                margin: 20px auto;
+            }
+
+            .header h1 {
+                font-size: clamp(27px, 8vw, 34px);
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .lab-notice,
+            .reset-notice {
+                font-size: 13px;
+            }
+
+            pre {
+                padding: 12px;
+                font-size: 12px;
             }
         }
     </style>
@@ -300,6 +447,7 @@
 
     <nav class="navbar">
         <div class="logo">SNXLabs</div>
+        <a class="home-link" href="/" aria-label="Return to SNXLabs homepage">← SNXLabs Home</a>
     </nav>
 
     <main class="container">
@@ -309,19 +457,38 @@
             <p>Authentication Bypass</p>
         </div>
 
-        {% if completed %}
-        <div class="success">
-            <h3>✓ Challenge Completed!</h3>
-
-            <p>
-                You successfully bypassed the authentication mechanism
-                using SQL Injection.
-            </p>
-
-            <p>
-                You can now study the remediation section below.
-            </p>
+        <div class="lab-notice" role="note">
+            <strong>Local training lab — disposable data only.</strong>
+            This database contains seeded practice accounts, not real users.
+            Do not enter real credentials or use this lab against external systems.
         </div>
+
+        {% if reset_done %}
+        <div class="reset-notice" role="status" aria-live="polite">
+            Practice data restored. The shared lab users table was recreated with
+            the original sample accounts; any changes made during practice were removed.
+        </div>
+        {% endif %}
+
+        {% if completed %}
+        <section class="success" role="status" aria-live="polite">
+            <h3>✓ Challenge Completed!</h3>
+            <div class="success-grid">
+                <div class="success-point">
+                    <h4>What happened</h4>
+                    <p>Your input changed the login query, and it returned the real seeded administrator record without the administrator password.</p>
+                </div>
+                <div class="success-point">
+                    <h4>Why it worked</h4>
+                    <p>The app joined untrusted input into SQL text. The database interpreted part of that input as query syntax instead of only as a value.</p>
+                </div>
+                <div class="success-point">
+                    <h4>Security impact</h4>
+                    <p>In a real system, a similar flaw can bypass authentication or expose and alter data within the database account’s permissions.</p>
+                </div>
+            </div>
+            <p>Review the defensive examples below. This lab uses disposable local data only.</p>
+        </section>
         {% endif %}
 
         <div class="grid">
@@ -384,6 +551,24 @@
 
                 <h2>🔐 Login</h2>
 
+                {% if login_outcome == "failed" %}
+                <div class="feedback failed" role="status" aria-live="polite">
+                    Login failed: the practice query returned no matching accounts.
+                    Check the values, or use the hint if you are working on the challenge.
+                </div>
+                {% elif login_outcome == "incomplete" %}
+                <div class="feedback incomplete" role="status" aria-live="polite">
+                    The query returned account data, but the challenge is not complete.
+                    It requires the real seeded administrator record to be returned
+                    without submitting that account’s correct password.
+                </div>
+                {% elif login_outcome == "error" %}
+                <div class="feedback query-error" role="status" aria-live="polite">
+                    The practice query could not be completed. The lab error details
+                    are shown below for learning purposes.
+                </div>
+                {% endif %}
+
                 <form method="POST">
 
                     <label for="username">
@@ -396,6 +581,7 @@
                         name="username"
                         placeholder="Enter username"
                         autocomplete="off"
+                        value="{{ submitted_username }}"
                     >
 
                     <label for="password">
@@ -421,25 +607,33 @@
 
                 <div class="actions">
 
+                    <div style="width: 100%;">
+                    <p class="reset-explanation">
+                        Reset recreates the shared practice users table with the
+                        original admin, Alice, and Bob sample accounts. It removes
+                        any changes or extra rows for everyone using this app instance.
+                    </p>
                     <form
                         method="POST"
                         action="/labs/sqli/reset"
-                        style="width: 100%;"
+                        onsubmit="return confirm('Reset the shared practice database to its original sample accounts? Changes made during practice will be removed.');"
                     >
                         <button
                             type="submit"
                             class="reset-button"
                         >
-                            ↻ Reset Lab
+                            ↻ Reset Practice Data
                         </button>
                     </form>
+                    </div>
 
                 </div>
 
                 {% if error %}
-                    <div class="error">
-                        <strong>SQL Error:</strong><br>
+                    <div class="error" role="alert">
+                        <strong>Practice SQL error details:</strong><br>
                         {{ error }}
+                        <p>Detailed errors are shown only because this is a local training lab.</p>
                     </div>
                 {% endif %}
 
@@ -501,14 +695,15 @@
             <h2>🛡️ Remediation</h2>
 
             <p>
-                SQL Injection occurs when untrusted user input is directly
-                concatenated into an SQL query.
+                SQL injection occurs when an application lets untrusted input
+                become part of SQL syntax. This lab intentionally demonstrates
+                that flaw using disposable sample records.
             </p>
 
             <p>
-                In this lab, the vulnerable application builds the query
-                by inserting the username and password directly into the
-                SQL statement.
+                Here, the login handler concatenates the submitted username and
+                password into a query string. The database parses the resulting
+                text as SQL, so crafted input can change the query’s conditions.
             </p>
 
             <div class="code-title">
@@ -524,8 +719,9 @@
 results = connection.execute(query).fetchall()</code></pre>
 
             <p>
-                The problem is that the application treats user input as
-                part of the SQL syntax.
+                Because the values and SQL syntax share one string, input can
+                alter the meaning of the statement rather than being compared
+                only as data.
             </p>
 
             <div class="code-title">
@@ -544,29 +740,50 @@ results = connection.execute(
 ).fetchall()</code></pre>
 
             <p>
-                The <strong>?</strong> placeholders tell SQLite to treat
-                the supplied values as data rather than SQL syntax.
+                The placeholders define the statement structure first; the
+                database driver binds the supplied values separately. This is
+                parameterized SQL using a prepared statement, so input cannot
+                change the query structure.
+            </p>
+
+            <h3>Handle input deliberately</h3>
+            <p>
+                Validate expected formats, lengths, and allowed values where
+                appropriate. Treat validation as a supplement—not a replacement
+                for parameterized queries. Never try to remove “dangerous”
+                characters as your SQL injection defense.
+            </p>
+
+            <h3>Limit database permissions</h3>
+            <p>
+                Give each application only the database access it needs. Avoid
+                administrator-level accounts, restrict access to required tables
+                and operations, and protect SQLite database files with appropriate
+                operating-system permissions.
+            </p>
+
+            <h3>Handle errors safely</h3>
+            <p>
+                Log detailed database exceptions on the server for maintainers.
+                Show users a generic error message; do not reveal SQL text,
+                schema details, file paths, or credentials. This lab displays
+                SQL error details only to help with local practice.
             </p>
 
             <ul class="fix-list">
                 <li>
-                    <strong>Use parameterized queries</strong>
-                    instead of string concatenation.
+                    <strong>Use parameterized queries and prepared statements</strong>
+                    for every value supplied by a user.
                 </li>
 
                 <li>
-                    <strong>Validate input</strong>
-                    where appropriate.
+                    <strong>Store real account passwords as strong password hashes.</strong>
+                    This lab’s visible sample passwords are for practice only.
                 </li>
 
                 <li>
-                    <strong>Use least-privilege database accounts</strong>
-                    in production.
-                </li>
-
-                <li>
-                    <strong>Avoid exposing database errors</strong>
-                    directly to users.
+                    <strong>Keep training data disposable</strong>
+                    and never connect an intentionally vulnerable exercise to real accounts or systems.
                 </li>
             </ul>
 

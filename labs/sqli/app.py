@@ -198,6 +198,9 @@ def sqli_lab():
     results = []
     error = None
     completed = False
+    login_outcome = None
+    submitted_username = ""
+    reset_done = request.args.get("reset") == "1"
 
     if request.method == "POST":
 
@@ -210,6 +213,7 @@ def sqli_lab():
             "password",
             ""
         )
+        submitted_username = username
 
         connection = get_db()
 
@@ -222,33 +226,67 @@ def sqli_lab():
         )
 
         try:
+            challenge_admin = connection.execute(
+                """
+                SELECT id, username, password, role
+                FROM users
+                WHERE username = ? AND role = ?
+                ORDER BY id
+                LIMIT 1
+                """,
+                ("admin", "administrator")
+            ).fetchone()
 
             results = connection.execute(
                 query
             ).fetchall()
 
-            admin_found = any(
-                user["username"] == "admin"
-                for user in results
+            admin_record_returned = (
+                challenge_admin is not None
+                and any(
+                    all(
+                        user[column] == challenge_admin[column]
+                        for column in ("id", "username", "password", "role")
+                    )
+                    for user in results
+                )
             )
 
-            if (
-                admin_found
-                and password != ADMIN_PASSWORD
-            ):
-                completed = True
+            submitted_real_admin_credentials = (
+                challenge_admin is not None
+                and username == challenge_admin["username"]
+                and password == challenge_admin["password"]
+            )
+
+            completed = (
+                admin_record_returned
+                and not submitted_real_admin_credentials
+            )
 
         except sqlite3.Error as exc:
 
             error = str(exc)
 
-        connection.close()
+        finally:
+            connection.close()
+
+        if error:
+            login_outcome = "error"
+        elif completed:
+            login_outcome = "completed"
+        elif results:
+            login_outcome = "incomplete"
+        else:
+            login_outcome = "failed"
 
     return render_template(
         "sqli/index.html",
         results=results,
         error=error,
-        completed=completed
+        completed=completed,
+        login_outcome=login_outcome,
+        submitted_username=submitted_username,
+        reset_done=reset_done
     )
 
 
@@ -265,7 +303,7 @@ def reset_sqli():
     reset_db()
 
     return redirect(
-        "/labs/sqli"
+        "/labs/sqli?reset=1"
     )
 
 
