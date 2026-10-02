@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SQL Injection Lab | SNXLabs</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            color: #e8e8e8;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            border-bottom: 1px solid #222;
+            background: #0d0d0d;
+        }
+
+        .logo {
+            color: #00ff88;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1000px;
+            margin: 35px auto;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            color: #00ff88;
+        }
+
+        .header p {
+            color: #999;
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #111;
+            border: 1px solid #242424;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .objective {
+            line-height: 1.6;
+            color: #bbb;
+        }
+
+        .objective strong {
+            color: #fff;
+        }
+
+        .difficulty {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #251d00;
+            color: #ffc400;
+            font-size: 13px;
+        }
+
+        .hint-box {
+            margin-top: 20px;
+        }
+
+        .hint-button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #161616;
+            color: #00ff88;
+            cursor: pointer;
+        }
+
+        .hint-button:hover {
+            background: #1d1d1d;
+        }
+
+        .hint {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            border-left: 3px solid #00ff88;
+            background: #0b1711;
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .hint.show {
+            display: block;
+        }
+
+        .login-box h2 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: #aaa;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #090909;
+            color: white;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #00ff88;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #00ff88;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .login-button:hover {
+            background: #00dd77;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #161616;
+            color: #ff7777;
+            cursor: pointer;
+        }
+
+        .reset-button:hover {
+            background: #211515;
+        }
+
+        .success {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            background: #07160e;
+            color: #00ff88;
+        }
+
+        .success h3 {
+            margin-top: 0;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result {
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #292929;
+            border-radius: 7px;
+            background: #0d0d0d;
+        }
+
+        .result p {
+            margin: 6px 0;
+        }
+
+        .result span {
+            color: #00ff88;
+        }
+
+        .error {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            background: #250909;
+            border: 1px solid #6b2020;
+            color: #ff6666;
+        }
+
+        .remediation {
+            margin-top: 30px;
+        }
+
+        .remediation h2 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .remediation p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .code-title {
+            margin-top: 25px;
+            margin-bottom: 8px;
+            color: #ddd;
+            font-weight: bold;
+        }
+
+        pre {
+            overflow-x: auto;
+            padding: 18px;
+            border: 1px solid #292929;
+            border-radius: 8px;
+            background: #070707;
+            color: #ccc;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        .vulnerable-code {
+            border-left: 3px solid #ff5555;
+        }
+
+        .secure-code {
+            border-left: 3px solid #00ff88;
+        }
+
+        .fix-list {
+            color: #aaa;
+            line-height: 1.8;
+        }
+
+        .fix-list strong {
+            color: #ddd;
+        }
+
+        .footer {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #222;
+            color: #666;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 750px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                width: 94%;
+                margin-top: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo">SNXLabs</div>
+    </nav>
+
+    <main class="container">
+
+        <div class="header">
+            <h1>SQL Injection Lab</h1>
+            <p>Authentication Bypass</p>
+        </div>
+
+        {% if completed %}
+        <div class="success">
+            <h3>✓ Challenge Completed!</h3>
+
+            <p>
+                You successfully bypassed the authentication mechanism
+                using SQL Injection.
+            </p>
+
+            <p>
+                You can now study the remediation section below.
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="grid">
+
+            <section class="card">
+
+                <h2>🎯 Objective</h2>
+
+                <div class="objective">
+
+                    <p>
+                        This application contains an intentionally vulnerable
+                        SQL query.
+                    </p>
+
+                    <p>
+                        Your goal is to
+                        <strong>bypass the login authentication</strong>
+                        and access the administrator account without knowing
+                        the correct password.
+                    </p>
+
+                    <p>
+                        <strong>Goal:</strong><br>
+                        Access the <strong>admin</strong> account using
+                        SQL Injection.
+                    </p>
+
+                </div>
+
+                <div class="difficulty">
+                    Difficulty: Easy
+                </div>
+
+                <div class="hint-box">
+
+                    <button
+                        type="button"
+                        class="hint-button"
+                        onclick="toggleHint()"
+                    >
+                        💡 Show Hint
+                    </button>
+
+                    <div id="hint" class="hint">
+                        The application directly places your input into
+                        an SQL query.
+
+                        <br><br>
+
+                        Think about how you can make the
+                        <strong>WHERE</strong> condition evaluate to true.
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="card login-box">
+
+                <h2>🔐 Login</h2>
+
+                <form method="POST">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Enter username"
+                        autocomplete="off"
+                    >
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="text"
+                        id="password"
+                        name="password"
+                        placeholder="Enter password"
+                        autocomplete="off"
+                    >
+
+                    <button
+                        type="submit"
+                        class="login-button"
+                    >
+                        Login
+                    </button>
+
+                </form>
+
+                <div class="actions">
+
+                    <form
+                        method="POST"
+                        action="/labs/sqli/reset"
+                        style="width: 100%;"
+                    >
+                        <button
+                            type="submit"
+                            class="reset-button"
+                        >
+                            ↻ Reset Lab
+                        </button>
+                    </form>
+
+                </div>
+
+                {% if error %}
+                    <div class="error">
+                        <strong>SQL Error:</strong><br>
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                {% if results %}
+
+                    <div class="results">
+
+                        <h2>Query Result</h2>
+
+                        {% for user in results %}
+
+                            <div class="result">
+
+                                <p>
+                                    ID:
+                                    <span>
+                                        {{ user["id"] }}
+                                    </span>
+                                </p>
+
+                                <p>
+                                    Username:
+                                    <span>
+                                        {{ user["username"] }}
+                                    </span>
+                                </p>
+
+                                <p>
+                                    Password:
+                                    <span>
+                                        {{ user["password"] }}
+                                    </span>
+                                </p>
+
+                                <p>
+                                    Role:
+                                    <span>
+                                        {{ user["role"] }}
+                                    </span>
+                                </p>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+            </section>
+
+        </div>
+
+
+        <!-- REMEDIATION -->
+
+        <section class="card remediation">
+
+            <h2>🛡️ Remediation</h2>
+
+            <p>
+                SQL Injection occurs when untrusted user input is directly
+                concatenated into an SQL query.
+            </p>
+
+            <p>
+                In this lab, the vulnerable application builds the query
+                by inserting the username and password directly into the
+                SQL statement.
+            </p>
+
+            <div class="code-title">
+                ❌ Vulnerable Code
+            </div>
+
+            <pre class="vulnerable-code"><code>query = (
+    "SELECT * FROM users "
+    f"WHERE username = '{username}' "
+    f"AND password = '{password}'"
+)
+
+results = connection.execute(query).fetchall()</code></pre>
+
+            <p>
+                The problem is that the application treats user input as
+                part of the SQL syntax.
+            </p>
+
+            <div class="code-title">
+                ✅ Secure Code
+            </div>
+
+            <pre class="secure-code"><code>query = (
+    "SELECT * FROM users "
+    "WHERE username = ? "
+    "AND password = ?"
+)
+
+results = connection.execute(
+    query,
+    (username, password)
+).fetchall()</code></pre>
+
+            <p>
+                The <strong>?</strong> placeholders tell SQLite to treat
+                the supplied values as data rather than SQL syntax.
+            </p>
+
+            <ul class="fix-list">
+                <li>
+                    <strong>Use parameterized queries</strong>
+                    instead of string concatenation.
+                </li>
+
+                <li>
+                    <strong>Validate input</strong>
+                    where appropriate.
+                </li>
+
+                <li>
+                    <strong>Use least-privilege database accounts</strong>
+                    in production.
+                </li>
+
+                <li>
+                    <strong>Avoid exposing database errors</strong>
+                    directly to users.
+                </li>
+            </ul>
+
+        </section>
+
+
+        <div class="footer">
+            SNXLabs — Learn. Break. Understand.
+        </div>
+
+    </main>
+
+
+    <script>
+        function toggleHint() {
+            const hint = document.getElementById("hint");
+            const button = document.querySelector(".hint-button");
+
+            hint.classList.toggle("show");
+
+            if (hint.classList.contains("show")) {
+                button.textContent = "🙈 Hide Hint";
+            } else {
+                button.textContent = "💡 Show Hint";
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SNXLabs — Web Security Labs</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+            SNX<span>Labs</span>
+        </div>
+
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#labs">Labs</a>
+            <a href="#about">About</a>
+        </nav>
+    </header>
+
+
+    <main>
+
+        <section id="home" class="hero">
+
+            <p class="badge">WEB SECURITY TRAINING PLATFORM</p>
+
+            <h1>
+                Learn.<br>
+                <span>Break.</span><br>
+                Understand.
+            </h1>
+
+            <p class="description">
+                An interactive laboratory for learning and understanding
+                common web security vulnerabilities in a controlled environment.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="#labs" class="btn primary">
+                    Explore Labs
+                </a>
+
+                <a href="#about" class="btn secondary">
+                    Learn More
+                </a>
+            </div>
+
+        </section>
+
+
+        <section id="labs" class="labs-section">
+
+            <div class="section-header">
+                <p class="section-label">01 / VULNERABILITY LABS</p>
+
+                <h2>
+                    Choose your <span>laboratory.</span>
+                </h2>
+
+                <p>
+                    Practice common web security vulnerabilities
+                    in intentionally vulnerable environments.
+                </p>
+            </div>
+
+
+            <div class="lab-grid">
+
+                <!-- SQL INJECTION -->
+
+                <article class="lab-card">
+
+                    <div class="lab-number">01</div>
+
+                    <div class="lab-icon">SQL</div>
+
+                    <h3>SQL Injection</h3>
+
+                    <p>
+                        Learn how unsafe database queries can lead
+                        to SQL injection vulnerabilities.
+                    </p>
+
+                    <div class="lab-footer">
+                        <span class="difficulty beginner">
+                            BEGINNER
+                        </span>
+
+                        <a
+                            href="/labs/sqli"
+                            class="launch-button"
+                        >
+                            Launch Lab →
+                        </a>
+                    </div>
+
+                </article>
+
+
+                <!-- XSS -->
+
+                <article class="lab-card">
+
+                    <div class="lab-number">02</div>
+
+                    <div class="lab-icon">XSS</div>
+
+                    <h3>Cross-Site Scripting</h3>
+
+                    <p>
+                        Explore how untrusted input can affect
+                        web page content and browser behavior.
+                    </p>
+
+                    <div class="lab-footer">
+                        <span class="difficulty beginner">
+                            BEGINNER
+                        </span>
+
+                        <button disabled>
+                            Coming Soon
+                        </button>
+                    </div>
+
+                </article>
+
+
+                <!-- CSRF -->
+
+                <article class="lab-card">
+
+                    <div class="lab-number">03</div>
+
+                    <div class="lab-icon">CSRF</div>
+
+                    <h3>CSRF</h3>
+
+                    <p>
+                        Understand forged requests and the role
+                        of CSRF protection mechanisms.
+                    </p>
+
+                    <div class="lab-footer">
+                        <span class="difficulty intermediate">
+                            INTERMEDIATE
+                        </span>
+
+                        <button disabled>
+                            Coming Soon
+                        </button>
+                    </div>
+
+                </article>
+
+
+                <!-- PATH TRAVERSAL -->
+
+                <article class="lab-card">
+
+                    <div class="lab-number">04</div>
+
+                    <div class="lab-icon">LFI</div>
+
+                    <h3>Path Traversal</h3>
+
+                    <p>
+                        Study unsafe file path handling through
+                        a controlled laboratory environment.
+                    </p>
+
+                    <div class="lab-footer">
+                        <span class="difficulty intermediate">
+                            INTERMEDIATE
+                        </span>
+
+                        <button disabled>
+                            Coming Soon
+                        </button>
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <section id="about" class="about-section">
+
+            <p class="section-label">02 / ABOUT SNXLABS</p>
+
+            <h2>
+                Built for <span>learning.</span>
+            </h2>
+
+            <p>
+                SNXLabs is designed as a controlled web security
+                training platform where users can learn how
+                vulnerabilities work, practice safely, and
+                understand how to fix them.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+        <p>SNXLabs © 2026</p>
+        <p>Built for security education.</p>
+    </footer>
+
+
+    <script src="js/app.js"></script>
+
+</body>
+</html>
